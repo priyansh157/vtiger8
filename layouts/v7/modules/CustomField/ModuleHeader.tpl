@@ -8,6 +8,33 @@
 *************************************************************************************}
 
 {strip}
+	<header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light" style="background-color: #b1d7fe!important;">
+      <a class="navbar-brand" href="#">Vtiger CRM</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Contacts</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Accounts</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Opportunities</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Leads</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
 	<div class="col-sm-11 col-xs-10 padding0 module-action-bar clearfix coloredBorderTop">
 		<div class="module-action-content clearfix {$MODULE}-module-action-content">
 			<div class="col-lg-7 col-md-6 col-sm-5 col-xs-11 padding0 module-breadcrumb module-breadcrumb-{$smarty.request.view} transitionsAllHalfSecond">

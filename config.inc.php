@@ -84,7 +84,7 @@ $site_URL = 'http://localhost:8080/vtiger8/';
 // url for customer portal (Example: http://vtiger.com/portal)
 $PORTAL_URL = $site_URL.'/customerportal';
 // root directory path
-$root_directory = 'C:\xampp_7_4\htdocs\vtiger8/';
+$root_directory = 'C:\xampp_7_4\htdocs\vtiger8';
 
 // cache direcory path
 $cache_dir = 'cache/';

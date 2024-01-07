@@ -697,30 +697,60 @@ Vtiger.Class('Vtiger_Index_Js', {
 			}
 		});
 
-		jQuery('.app-modules-dropdown-container').hover(function(e) {
+		// jQuery('.app-modules-dropdown-container').hover(function(e) {
+		// 	var dropdownContainer = jQuery(e.currentTarget);
+		// 	jQuery('.dropdown').removeClass('open');
+		// 	if(dropdownContainer.length) {
+		// 		//Fix for Responsive layout Sub Menu in mobile devices
+		// 		var appModulesDropdown = dropdownContainer.find('.app-modules-dropdown');
+		// 		if(dropdownContainer.hasClass('dropdown-compact')) {
+		// 			appModulesDropdown.css('top', dropdownContainer.position().top - 8);
+		// 		} else {
+		// 			appModulesDropdown.css('top', '');
+		// 		}
+		// 		appModulesDropdown.css('left', appModulesDropdown.parent().width() - 8);
+		// 		dropdownContainer.addClass('open').find('.app-item').addClass('active-app-item');
+		// 	}
+		// }, function(e) {
+		// 	var dropdownContainer = jQuery(e.currentTarget);
+		// 	dropdownContainer.find('.app-item').removeClass('active-app-item');
+		// 	setTimeout(function() {
+		// 		if(dropdownContainer.find('.app-modules-dropdown').length && !dropdownContainer.find('.app-modules-dropdown').is(':hover') && !dropdownContainer.is(':hover')) {
+		// 			dropdownContainer.removeClass('open');
+		// 		}
+		// 	}, 500);
+
+		// });
+		jQuery('.app-modules-dropdown-container').hover(function (e) {
 			var dropdownContainer = jQuery(e.currentTarget);
 			jQuery('.dropdown').removeClass('open');
-			if(dropdownContainer.length) {
-				//Fix for Responsive layout Sub Menu in mobile devices
+			if (dropdownContainer.length) {
 				var appModulesDropdown = dropdownContainer.find('.app-modules-dropdown');
-				if(dropdownContainer.hasClass('dropdown-compact')) {
-					appModulesDropdown.css('top', dropdownContainer.position().top - 8);
-				} else {
-					appModulesDropdown.css('top', '');
-				}
-				appModulesDropdown.css('left', appModulesDropdown.parent().width() - 8);
+				appModulesDropdown.css('left', 0); // Set left to align with the parent
+				appModulesDropdown.css('width', 'auto'); // Set width to auto for dynamic sizing
 				dropdownContainer.addClass('open').find('.app-item').addClass('active-app-item');
+		
+				// Calculate the width based on the widest submenu item
+				var maxWidth = 0;
+				appModulesDropdown.find('li').each(function() {
+					var width = jQuery(this).outerWidth();
+					if (width > maxWidth) {
+						maxWidth = width;
+					}
+				});
+				appModulesDropdown.width(maxWidth); // Set the submenu width
 			}
-		}, function(e) {
+		}, function (e) {
 			var dropdownContainer = jQuery(e.currentTarget);
 			dropdownContainer.find('.app-item').removeClass('active-app-item');
-			setTimeout(function() {
-				if(dropdownContainer.find('.app-modules-dropdown').length && !dropdownContainer.find('.app-modules-dropdown').is(':hover') && !dropdownContainer.is(':hover')) {
+			setTimeout(function () {
+				if (dropdownContainer.find('.app-modules-dropdown').length && !dropdownContainer.find('.app-modules-dropdown').is(':hover') && !dropdownContainer.is(':hover')) {
 					dropdownContainer.removeClass('open');
 				}
 			}, 500);
-
 		});
+		
+		
 
 		//Fix for Responsive layout Sub Menu in mobile devices
 		jQuery('.app-item').on('click', function(e) {

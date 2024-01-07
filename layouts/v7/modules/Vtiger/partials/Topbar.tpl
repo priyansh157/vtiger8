@@ -8,6 +8,11 @@
 ************************************************************************************}
 
 {strip}
+	{* <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"> *}
+	{* <link href="styles.css" rel="stylesheet">
+	<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script> 
+	 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> *}
 	{include file="modules/Vtiger/Header.tpl"}
 
 	{assign var=APP_IMAGE_MAP value=Vtiger_MenuStructure_Model::getAppIcons()}
@@ -200,5 +205,156 @@
 					</ul>
 				</div>
 			</div>
+			<div class="row">
+			{assign var=USER_PRIVILEGES_MODEL value=Users_Privileges_Model::getCurrentUserPrivilegesModel()}
+		{assign var=HOME_MODULE_MODEL value=Vtiger_Module_Model::getInstance('Home')}
+		{assign var=DASHBOARD_MODULE_MODEL value=Vtiger_Module_Model::getInstance('Dashboard')}
+		<div class="app-list row">
+			<div class="horizontal-menu" style="background-color: #87d0ff;height: 50px;">
+			{if $USER_PRIVILEGES_MODEL->hasModulePermission($DASHBOARD_MODULE_MODEL->getId())}
+				<div class="menu-item1 app-item1 dropdown-toggle"style="margin-left: 15px;"data-default-url="{$HOME_MODULE_MODEL->getDefaultUrl()}">
+					<div class="menu-items-wrapper">
+						<span class="app-icon-list fa fa-dashboard"></span>
+						<span class="app-name textOverflowEllipsis"> {vtranslate('LBL_DASHBOARD',$MODULE)}</span>
+					</div>
+				</div>
+			{/if}
+			{assign var=APP_GROUPED_MENU value=Settings_MenuEditor_Module_Model::getAllVisibleModules()}
+			{assign var=APP_LIST value=Vtiger_MenuStructure_Model::getAppMenuList()}
+			{foreach item=APP_NAME from=$APP_LIST}
+				{if $APP_NAME eq 'ANALYTICS'} {continue}{/if}
+				{if !empty($APP_GROUPED_MENU.$APP_NAME)}
+					<div class="dropdown app-modules-dropdown-container">
+						{foreach item=APP_MENU_MODEL from=$APP_GROUPED_MENU.$APP_NAME}
+							{assign var=FIRST_MENU_MODEL value=$APP_MENU_MODEL}
+							{if $APP_MENU_MODEL}
+								{break}
+							{/if}
+						{/foreach}
+						{* Fix for Responsive Layout Menu - Changed data-default-url to # *}
+						<div class="menu-item1 app-item1 dropdown-toggle app-item-color-{$APP_NAME}" data-app-name="{$APP_NAME}" id="{$APP_NAME}_modules_dropdownMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" data-default-url="#">
+							<div class="menu-items-wrapper app-menu-items-wrapper">
+								<span class="app-icon-list fa {$APP_IMAGE_MAP.$APP_NAME}"></span>
+								<span class="app-name textOverflowEllipsis"> {vtranslate("LBL_$APP_NAME")}</span>
+								<span class="fa fa-chevron-right pull-right"></span>
+							</div>
+						</div>
+						<ul class="dropdown-menu app-modules-dropdown here"  aria-labelledby="{$APP_NAME}_modules_dropdownMenu" >
+							{foreach item=moduleModel key=moduleName from=$APP_GROUPED_MENU[$APP_NAME]}
+								{assign var='translatedModuleLabel' value=vtranslate($moduleModel->get('label'),$moduleName )}
+								<li>
+									<a href="{$moduleModel->getDefaultUrl()}&app={$APP_NAME}" title="{$translatedModuleLabel}">
+										<span class="module-icon">{$moduleModel->getModuleIcon()}</span>
+										<span class="module-name textOverflowEllipsis"> {$translatedModuleLabel}</span>
+									</a>
+								</li>
+							{/foreach}
+						</ul>
+					</div>
+				{/if}
+			{/foreach}
+			<div class="app-list-divider"></div>
+			{assign var=MAILMANAGER_MODULE_MODEL value=Vtiger_Module_Model::getInstance('MailManager')}
+			{if $USER_PRIVILEGES_MODEL->hasModulePermission($MAILMANAGER_MODULE_MODEL->getId())}
+				<div class="menu-item1 app-item1 app-item-misc" data-default-url="index.php?module=MailManager&view=List">
+					<div class="menu-items-wrapper">
+						<span class="app-icon-list fa">{$MAILMANAGER_MODULE_MODEL->getModuleIcon()}</span>
+						<span class="app-name textOverflowEllipsis"> {vtranslate('MailManager')}</span>
+					</div>
+				</div>
+			{/if}
+			{assign var=DOCUMENTS_MODULE_MODEL value=Vtiger_Module_Model::getInstance('Documents')}
+			{if $USER_PRIVILEGES_MODEL->hasModulePermission($DOCUMENTS_MODULE_MODEL->getId())}
+				<div class="menu-item1 app-item1 app-item-misc" data-default-url="index.php?module=Documents&view=List">
+					<div class="menu-items-wrapper">
+						<span class="app-icon-list fa">{$DOCUMENTS_MODULE_MODEL->getModuleIcon()}</span>
+						<span class="app-name textOverflowEllipsis"> {vtranslate('Documents')}</span>
+					</div>
+				</div>
+			{/if}
+			{if $USER_MODEL->isAdminUser()}
+				{if vtlib_isModuleActive('ExtensionStore')}
+					<div class="menu-item1 app-item1 app-item-misc" data-default-url="index.php?module=ExtensionStore&parent=Settings&view=ExtensionStore">
+						<div class="menu-items-wrapper">
+							<span class="app-icon-list fa fa-shopping-cart"></span>
+							<span class="app-name textOverflowEllipsis"> {vtranslate('LBL_EXTENSION_STORE', 'Settings:Vtiger')}</span>
+						</div>
+					</div>
+				{/if}
+			{/if}
+			{if $USER_MODEL->isAdminUser()}
+				<div class="dropdown app-modules-dropdown-container dropdown-compact">
+					<div class="menu-item1 app-item1 dropdown-toggle app-item-misc" data-app-name="TOOLS" id="TOOLS_modules_dropdownMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" data-default-url="#">
+						<div class="menu-items-wrapper app-menu-items-wrapper">
+							<span class="app-icon-list fa fa-cog"></span>
+							<span class="app-name textOverflowEllipsis"> {vtranslate('LBL_SETTINGS', 'Settings:Vtiger')}</span>
+							{if $USER_MODEL->isAdminUser()}
+								<span class="fa fa-chevron-right pull-right"></span>
+							{/if}
+						</div>
+					</div>
+					<ul class="dropdown-menu app-modules-dropdown dropdown-modules-compact" aria-labelledby="{$APP_NAME}_modules_dropdownMenu" data-height="0.27">
+						<li>
+							<a href="?module=Vtiger&parent=Settings&view=Index">
+								<span class="fa fa-cog module-icon"></span>
+								<span class="module-name textOverflowEllipsis"> {vtranslate('LBL_CRM_SETTINGS','Vtiger')}</span>
+							</a>
+						</li>
+						<li>
+							<a href="?module=Users&parent=Settings&view=List">
+								<span class="fa fa-user module-icon"></span>
+								<span class="module-name textOverflowEllipsis"> {vtranslate('LBL_MANAGE_USERS','Vtiger')}</span>
+							</a>
+						</li>
+					</ul>
+				</div>
+			{/if}
+			</div>
+		</div>
+		</div>
 		</div>
 {/strip}
+<style>
+.horizontal-menu {
+display: flex;
+}
+
+.horizontal-menu .menu-item {
+
+margin-right: 10px; 
+}
+
+.app-item1 {
+    font-size: 14px;
+	height: fit-content;
+    color: #fff;
+    cursor: pointer;
+    display: block;
+    background-color: #007df2; 
+    padding: -0.5% 2% !important;
+    /* margin-left: 2px; */
+    opacity: 0.8;
+    text-shadow: 0 0 1px #000;
+}
+.menu-item1{  padding: 16px 5px;
+    /* margin: 10px 0; */
+	margin-right: 15px; 
+    cursor: pointer;
+    display: block;
+}
+
+ul.dropdown-menu.app-modules-dropdown {
+    height: auto !important;
+    max-height: 300px; 
+    overflow-y: auto; 
+	background-color: #ecf3ff;
+}
+.menu-item {
+    padding: 15px 5px;
+    /* margin: 10px 0; */
+   
+    cursor: pointer;
+    display: block;
+}
+
+</style>

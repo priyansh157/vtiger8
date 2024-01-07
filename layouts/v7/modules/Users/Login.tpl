@@ -10,8 +10,28 @@
 
 {strip}
 	<style>
+	/* Add custom styles here */
+/* Add custom styles here */
+@media (max-width: 992px) {
+  /* For medium-sized devices and smaller (until large desktops) */
+  .loginDiv {
+    width: 100%;
+    max-width: 100%;
+    /* Adjust other styles as needed */
+  }
+}
+
+/* Additional styles for larger desktops */
+@media (min-width: 1200px) {
+  .loginDiv {
+    width: auto;
+    /* Any specific styles for larger desktops */
+  }
+}
+
+
 		body {
-			background: url(layouts/v7/resources/Images/login-background.jpg);
+			background: url(layouts/v7/resources/Images1/bg.jpg);
 			background-position: center;
 			background-size: cover;
 			width: 100%;
@@ -207,8 +227,10 @@
 	</style>
 
 	<span class="app-nav"></span>
-	<div class="container-fluid loginPageContainer">
-		<div class="col-lg-5 col-md-12 col-sm-12 col-xs-12">
+  <div class="container-fluid loginPageContainer">
+	<div class="row">
+	<div class="col-lg-3 col-md-3 col-sm-3 col-xs-3"></div>
+		<div class="col-lg-5 col-md-9 col-sm-9 col-xs-9 d-flex justify-content-center justify-content-lg-start">
 			<div class="loginDiv widgetHeight">
 				<img class="img-responsive user-logo" src="layouts/v7/resources/Images/vtiger.png">
 				<div>
@@ -257,7 +279,7 @@
 				</div>
 			</div>
 		</div>
-
+	</div>
 		<div class="col-lg-1 hidden-xs hidden-sm hidden-md">
 			{*<div class="separatorDiv"></div>*}
 		</div>
