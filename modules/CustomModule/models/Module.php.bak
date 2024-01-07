@@ -1,0 +1,1481 @@
+<?php
+class CustomModule_Module_Model extends Vtiger_Module_Model
+{
+    public function getDefaultViewName() {
+        return 'Index';
+    }
+	public function isQuickCreateSupported(){
+
+		return false;
+
+	}
+	
+	public function getDigitalFunnel(){
+		global $adb;
+		
+		$sqlGroup = "SELECT vtiger_cf_1055.cf_1055 AS opgroup FROM vtiger_cf_1055 WHERE (vtiger_cf_1055.cf_1055=? OR vtiger_cf_1055.cf_1055=? OR vtiger_cf_1055.cf_1055=?) ORDER BY vtiger_cf_1055.cf_1055 ASC";
+		$dataGroup = array('BD','Cluster','Digital');
+		$resGroup = $adb->pquery($sqlGroup,$dataGroup);
+		$detGroup = array();
+		$gName = array();
+		while($detGroup=$adb->fetchByAssoc($resGroup)){
+			if(!empty($detGroup['opgroup'])){
+				array_push($gName,$detGroup['opgroup']);
+			}
+		}
+		$sqlGroup = "SELECT vtiger_cf_1125.cf_1125 AS opddet FROM vtiger_cf_1125 ORDER BY vtiger_cf_1125.cf_1125 ASC";
+		$dataGroup = array();
+		$resGroup = $adb->pquery($sqlGroup,$dataGroup);
+		$detGroup = array();
+		$ddetName = array();
+		while($detGroup=$adb->fetchByAssoc($resGroup)){
+			if(!empty($detGroup['opddet'])){
+				array_push($ddetName,$detGroup['opddet']);
+			}
+		}
+		$finalArray = array();
+		array_push($finalArray,$gName);
+		array_push($finalArray,$ddetName);
+		
+		$fc = 0;
+		$data = '';
+		$tempData = array();
+		for($gc=0;$gc<count($gName);$gc++){
+			if(!empty($gName[$gc])){
+				for($ddet=0;$ddet<count($ddetName);$ddet++){
+					if(!empty($ddetName[$ddet])){
+						$sqlCount = "SELECT COUNT(*) AS funcount FROM vtiger_potentialscf INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid WHERE vtiger_potentialscf.cf_1055=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=?";
+						$dataCount = array($gName[$gc],$ddetName[$ddet],0);
+						$resCount = $adb->pquery($sqlCount,$dataCount);
+						$detCount = array();
+						$detCount = $adb->fetchByAssoc($resCount);
+						if(empty($detCount['funcount'])){
+							$detCount['funcount'] = 0;
+						}
+						$tempData[$gc][$ddet] = $detCount['funcount'];
+						
+						$fc = $fc+$detCount['funcount'];
+					}
+				}
+			}
+		}
+		for($gc=0;$gc<count($gName);$gc++){
+			if(!empty($gName[$gc])){
+				$chartData = array();
+				for($ddet=0;$ddet<count($ddetName);$ddet++){
+					if(!empty($ddetName[$ddet])){
+						$fcData = ($tempData[$gc][$ddet]/$fc)*100;
+						$fcData = sprintf('%.2f',$fcData);
+						array_push($chartData,floatval($fcData));
+					}
+				}
+				array_push($finalArray,$chartData);
+				
+			}
+		}
+		return json_encode($finalArray,true);
+	}
+	
+	public function getPartnerFunnel(){
+		global $adb;
+		
+		$sqlP = "SELECT vtiger_potentialscf.cf_1121 AS partner FROM vtiger_potentialscf INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid WHERE vtiger_potentialscf.cf_1121!=? AND vtiger_crmentity.deleted=? GROUP BY vtiger_potentialscf.cf_1121";
+		$dataP = array('',0);
+		$resP = $adb->pquery($sqlP,$dataP);
+		$detP = array();
+		$pName = array();
+		while($detP=$adb->fetchByAssoc($resP)){
+			if(!empty($detP['partner'])){
+				array_push($pName,$detP['partner']);
+			}
+		}
+		$sqlGroup = "SELECT vtiger_cf_1125.cf_1125 AS opddet FROM vtiger_cf_1125 ORDER BY vtiger_cf_1125.cf_1125 ASC";
+		$dataGroup = array();
+		$resGroup = $adb->pquery($sqlGroup,$dataGroup);
+		$detGroup = array();
+		$ddetName = array();
+		while($detGroup=$adb->fetchByAssoc($resGroup)){
+			if(!empty($detGroup['opddet'])){
+				array_push($ddetName,$detGroup['opddet']);
+			}
+		}
+		$finalArray = array();
+		array_push($finalArray,$pName);
+		array_push($finalArray,$ddetName);
+		for($ddet=0;$ddet<count($ddetName);$ddet++){
+			if(!empty($ddetName[$ddet])){
+				$chartData = array();
+				for($gc=0;$gc<count($pName);$gc++){
+					if(!empty($pName[$gc])){
+						$sqlCount = "SELECT COUNT(*) AS funcount FROM vtiger_potentialscf INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid WHERE vtiger_potentialscf.cf_1121=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=?";
+						$dataCount = array($pName[$gc],$ddetName[$ddet],0);
+						// return $adb->convert2Sql($sqlCount,$dataCount);
+						$resCount = $adb->pquery($sqlCount,$dataCount);
+						$detCount = array();
+						$detCount = $adb->fetchByAssoc($resCount);
+						if(empty($detCount['funcount'])){
+							$detCount['funcount'] = 0;
+						}
+						array_push($chartData,$detCount['funcount']);
+					}
+				}
+				array_push($finalArray,$chartData);
+			}
+		}
+		
+		return json_encode($finalArray,true);
+	}
+	
+	public function getVerticalFunnel(){
+		global $adb;
+		
+		$sqlV = "SELECT vtiger_cf_1059.cf_1059 AS vertical FROM vtiger_cf_1059 ORDER BY vtiger_cf_1059.sortorderid ASC";
+		// ORDER BY vtiger_cf_1059.cf_1059 ASC
+		$dataV = array();
+		$resV = $adb->pquery($sqlV,$dataV);
+		$detV = array();
+		$vName = array();
+		$svName = array();
+		while($detV=$adb->fetchByAssoc($resV)){
+			if(!empty($detV['vertical'])){
+				array_push($vName,str_replace("&amp;","&",$detV['vertical']));
+				array_push($svName,str_replace("&amp;","&",$detV['vertical']));
+			}
+		}
+		
+		$sqlS = "SELECT vtiger_sales_stage.sales_stage FROM vtiger_sales_stage WHERE vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? ORDER BY vtiger_sales_stage.sales_stage ASC";
+		$dataS = array('L0-Support','L1-Go Live','L2-In Transition','L9-Lost Order','L12-Capability');
+		$resS = $adb->pquery($sqlS,$dataS);
+		$detS = array();
+		$sName = array();
+		while($detS=$adb->fetchByAssoc($resS)){
+			if(!empty($detS['sales_stage'])){
+				array_push($sName,$detS['sales_stage']);
+			}
+		}
+		$finalArray = array();
+		array_push($finalArray,$svName);
+		array_push($finalArray,$sName);
+		for($ssc=0;$ssc<count($sName);$ssc++){
+			if(!empty($sName[$ssc])){
+				$chartData = array();
+				for($gc=0;$gc<count($vName);$gc++){
+					if(!empty($vName[$gc])){
+						$sqlCount = "SELECT COUNT(*) AS funcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1059=? AND vtiger_crmentity.deleted=?";
+						$dataCount = array($sName[$ssc],$vName[$gc],0);
+						// return $adb->convert2Sql($sqlCount,$dataCount);
+						$resCount = $adb->pquery($sqlCount,$dataCount);
+						$detCount = array();
+						$detCount = $adb->fetchByAssoc($resCount);
+						if(empty($detCount['funcount'])){
+							$detCount['funcount'] = 0;
+						}
+						array_push($chartData,$detCount['funcount']);
+					}
+				}
+				array_push($finalArray,$chartData);
+			}
+		}
+		return json_encode($finalArray,true);
+	}
+	
+	public function getStageAcvFunnel(){
+		global $adb;
+		
+		$sqlS = "SELECT vtiger_sales_stage.sales_stage FROM vtiger_sales_stage WHERE vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? ORDER BY vtiger_sales_stage.sales_stage ASC";
+		$dataS = array('L0-Support','L1-Go Live','L2-In Transition','L12-Capability');
+		$resS = $adb->pquery($sqlS,$dataS);
+		$detS = array();
+		$sName = array();
+		while($detS=$adb->fetchByAssoc($resS)){
+			if(!empty($detS['sales_stage'])){
+				array_push($sName,$detS['sales_stage']);
+			}
+		}
+		$sqlGroup = "SELECT vtiger_cf_1125.cf_1125 AS opddet FROM vtiger_cf_1125 ORDER BY vtiger_cf_1125.cf_1125 ASC";
+		$dataGroup = array();
+		$resGroup = $adb->pquery($sqlGroup,$dataGroup);
+		$detGroup = array();
+		$ddetName = array();
+		while($detGroup=$adb->fetchByAssoc($resGroup)){
+			if(!empty($detGroup['opddet'])){
+				array_push($ddetName,$detGroup['opddet']);
+			}
+		}
+		$finalArray = array();
+		array_push($finalArray,$sName);
+		array_push($finalArray,$ddetName);
+		for($ddet=0;$ddet<count($ddetName);$ddet++){
+			if(!empty($ddetName[$ddet])){
+				$chartData = array();
+				for($gc=0;$gc<count($sName);$gc++){
+					if(!empty($sName[$gc])){
+						$sqlCount = "SELECT SUM(vtiger_potentialscf.cf_1093) AS funcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=?";
+						$dataCount = array($sName[$gc],$ddetName[$ddet],0);
+						// return $adb->convert2Sql($sqlCount,$dataCount);
+						$resCount = $adb->pquery($sqlCount,$dataCount);
+						$detCount = array();
+						$detCount = $adb->fetchByAssoc($resCount);
+						if(empty($detCount['funcount'])){
+							$detCount['funcount'] = 0;
+						}
+						$detCount['funcount'] = sprintf('%.2f',$detCount['funcount']);
+						array_push($chartData,floatval($detCount['funcount']));
+					}
+				}
+				array_push($finalArray,$chartData);
+			}
+		}
+		return json_encode($finalArray,true);
+	}
+	
+	public function getPartGenFunnel(){
+		global $adb;
+		
+		$sqlS = "SELECT vtiger_sales_stage.sales_stage FROM vtiger_sales_stage WHERE vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? ORDER BY vtiger_sales_stage.sales_stage ASC";
+		$dataS = array('L0-Support','L1-Go Live','L2-In Transition','L12-Capability');
+		$resS = $adb->pquery($sqlS,$dataS);
+		$detS = array();
+		$sName = array();
+		while($detS=$adb->fetchByAssoc($resS)){
+			if(!empty($detS['sales_stage'])){
+				array_push($sName,$detS['sales_stage']);
+			}
+		}
+		$sqlGroup = "SELECT vtiger_cf_1123.cf_1123 AS opddet FROM vtiger_cf_1123 ORDER BY vtiger_cf_1123.cf_1123 ASC";
+		$dataGroup = array();
+		$resGroup = $adb->pquery($sqlGroup,$dataGroup);
+		$detGroup = array();
+		$ddetName = array();
+		while($detGroup=$adb->fetchByAssoc($resGroup)){
+			if(!empty($detGroup['opddet'])){
+				array_push($ddetName,$detGroup['opddet']);
+			}
+		}
+		$finalArray = array();
+		array_push($finalArray,$sName);
+		array_push($finalArray,$ddetName);
+		for($ddet=0;$ddet<count($ddetName);$ddet++){
+			if(!empty($ddetName[$ddet])){
+				$chartData = array();
+				for($gc=0;$gc<count($sName);$gc++){
+					if(!empty($sName[$gc])){
+						$sqlCount = "SELECT COUNT(*) AS funcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1123=? AND vtiger_crmentity.deleted=?";
+						$dataCount = array($sName[$gc],$ddetName[$ddet],0);
+						// return $adb->convert2Sql($sqlCount,$dataCount);
+						$resCount = $adb->pquery($sqlCount,$dataCount);
+						$detCount = array();
+						$detCount = $adb->fetchByAssoc($resCount);
+						if(empty($detCount['funcount'])){
+							$detCount['funcount'] = 0;
+						}
+						// $detCount['funcount'] = sprintf('%.2f',$detCount['funcount']);
+						array_push($chartData,$detCount['funcount']);
+					}
+				}
+				array_push($finalArray,$chartData);
+			}
+		}
+		return json_encode($finalArray,true);
+	}
+	
+	public function getOppStagePillarFunnel(){
+		global $adb;
+		
+		$sqlS = "SELECT vtiger_sales_stage.sales_stage FROM vtiger_sales_stage WHERE vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? ORDER BY vtiger_sales_stage.sales_stage ASC";
+		$dataS = array('L0-Support','L1-Go Live','L2-In Transition','L12-Capability');
+		$resS = $adb->pquery($sqlS,$dataS);
+		$detS = array();
+		$sName = array();
+		while($detS=$adb->fetchByAssoc($resS)){
+			if(!empty($detS['sales_stage'])){
+				array_push($sName,$detS['sales_stage']);
+			}
+		}
+		$sqlGroup = "SELECT vtiger_cf_1133.cf_1133 AS opddet FROM vtiger_cf_1133 WHERE vtiger_cf_1133.cf_1133!=? ORDER BY vtiger_cf_1133.cf_1133 ASC";
+		$dataGroup = array('Traditional');
+		$resGroup = $adb->pquery($sqlGroup,$dataGroup);
+		$detGroup = array();
+		$ddetName = array();
+		while($detGroup=$adb->fetchByAssoc($resGroup)){
+			if(!empty($detGroup['opddet'])){
+				array_push($ddetName,$detGroup['opddet']);
+			}
+		}
+		$finalArray = array();
+		array_push($finalArray,$sName);
+		array_push($finalArray,$ddetName);
+		for($ddet=0;$ddet<count($ddetName);$ddet++){
+			if(!empty($ddetName[$ddet])){
+				$chartData = array();
+				for($gc=0;$gc<count($sName);$gc++){
+					if(!empty($sName[$gc])){
+						$sqlCount = "SELECT COUNT(*) AS funcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1133=? AND vtiger_crmentity.deleted=?";
+						$dataCount = array($sName[$gc],$ddetName[$ddet],0);
+						// return $adb->convert2Sql($sqlCount,$dataCount);
+						$resCount = $adb->pquery($sqlCount,$dataCount);
+						$detCount = array();
+						$detCount = $adb->fetchByAssoc($resCount);
+						if(empty($detCount['funcount'])){
+							$detCount['funcount'] = 0;
+						}
+						// $detCount['funcount'] = sprintf('%.2f',$detCount['funcount']);
+						array_push($chartData,$detCount['funcount']);
+					}
+				}
+				array_push($finalArray,$chartData);
+			}
+		}
+		return json_encode($finalArray,true);
+	}
+	
+	public function getSalesStages(){
+		global $adb,$current_user;
+		$sqlS = "SELECT vtiger_sales_stage.sales_stage FROM vtiger_sales_stage WHERE vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? AND vtiger_sales_stage.sales_stage!=? ORDER BY vtiger_sales_stage.sales_stage DESC";
+		$dataS = array('L9-Lost Order','L12-Capability','L11-On Hold','L10-No Bid','L0-Support','L13-Lost for Digital-BPM','L-1-End-Project');
+		$resS = $adb->pquery($sqlS,$dataS);
+		$detS = array();
+		$detSS = array();
+		while($detS=$adb->fetchByAssoc($resS)){
+			if(!empty($detS['sales_stage'])){
+				array_push($detSS,$detS['sales_stage']);
+			}
+		}
+		array_push($detSS,"L0-Support");
+		array_push($detSS,"L-1-End-Project");
+		array_push($detSS,"L11-On Hold");
+		array_push($detSS,"L10-No Bid");
+		array_push($detSS,"L9-Lost Order");
+		array_push($detSS,"L13-Lost for Digital-BPM");
+		return $detSS;
+	}
+	
+	public function getSalesManagers(){
+		global $adb,$current_user;
+		$sqlSM = "SELECT vtiger_potentialscf.cf_1065 AS salesmanager FROM vtiger_potentialscf INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid WHERE vtiger_potentialscf.cf_1113=? AND vtiger_crmentity.deleted=? GROUP BY vtiger_potentialscf.cf_1065 ORDER BY vtiger_potentialscf.cf_1065 ASC";
+		$dataSM = array('Active',0);
+		$resSM = $adb->pquery($sqlSM,$dataSM);
+		$detSM = array();
+		while($detSM[]=$adb->fetchByAssoc($resSM));
+		return $detSM;
+	}
+	
+	public function getPureDigitalFunnel($sManager){
+		global $adb,$current_user;
+		$detSS = $this->getSalesStages();
+		
+		if($sManager== 'null' || empty($sManager)){
+			$detSM = $this->getSalesManagers();
+		}else{
+			$detSM = array();
+			for($smc=0;$smc<count($sManager);$smc++){
+				$detSM[$smc]['salesmanager'] = $sManager[$smc];
+			}
+		}
+		//return $sManager;
+		$opArr = array();
+		$row = 0;
+		$oRow = 0;
+		$gTotalAcv = 0;
+		$gTotalTcv = 0;
+		$gTotalCount = 0;
+		foreach($detSS AS $ssr){
+			$tempAcv = 0;
+			$tempTcv = 0;
+			$tempCount = 0;
+			foreach($detSM AS $ur){
+				$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1093) AS acvtotal,SUM(vtiger_potentialscf.cf_1115) AS tcvtotal,COUNT(*) AS potcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+				if(!empty($ur['salesmanager'])){
+					$dataO = array($ssr,'Zombie','Inactive','Digital',0,$ur['salesmanager']);
+				}else{
+					$dataO = array($ssr,'Zombie','Inactive','Digital',0,'');
+				}
+				
+				// $sqlAP = "INSERT INTO a_params SET params=?,apdate=?";
+				// $dataAP = array($adb->convert2Sql($sqlO,$dataO),date('Y-m-d H:i:s'));
+				// $resAP = $adb->pquery($sqlAP,$dataAP);
+				
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$detO = $adb->fetchByAssoc($resO);
+				if(empty($detO['acvtotal'])){
+					$detO['acvtotal'] = 0;
+				}
+				if(empty($detO['tcvtotal'])){
+					$detO['tcvtotal'] = 0;
+				}
+				$tempAcv = $tempAcv+$detO['acvtotal'];
+				$tempTcv = $tempTcv+$detO['tcvtotal'];
+				$tempCount = $tempCount+$detO['potcount'];
+			}
+			$opList = '<div>('.$tempCount.') ACV - '.number_format($tempAcv,2).', TCV - '.number_format($tempTcv,2).'</div><br />'.$ssr;
+			$opArr[$row]['stage'][$oRow] = $opList;
+			if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM'){
+				$gTotalAcv = $gTotalAcv+$tempAcv;
+				$gTotalTcv = $gTotalTcv+$tempTcv;
+				$gTotalCount = $gTotalCount+$tempCount;
+			}
+			$oRow++;
+		}
+		$opArr[$row]['user'] = '<strong>Grand Total</strong>('.$gTotalCount.') ACV - '.number_format($gTotalAcv,2).', TCV - '.number_format($gTotalTcv,2);
+		$opArr[$row]['gtotal'] = 1;
+		$row++;
+		
+		$g4TotalAcv = 0;
+		$g4TotalTcv = 0;
+		$g4TotalCount = 0;
+		//added sainadh start
+		foreach($detSS AS $ssr){
+			$tempAcv = 0;
+			$tempTcv = 0;
+			$tempCount = 0;
+			foreach($detSM AS $ur){
+				if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM' && $ssr!= 'L3-Contract-LOI' && $ssr!= 'L2-In Transition' && $ssr!= 'L1-Go Live' && $ssr!= 'L0-Support'){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1093) AS acvtotal,SUM(vtiger_potentialscf.cf_1115) AS tcvtotal,COUNT(*) AS potcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					if(!empty($ur['salesmanager'])){
+						$dataO = array($ssr,'Zombie','Inactive','Digital',0,$ur['salesmanager']);
+					}else{
+						$dataO = array($ssr,'Zombie','Inactive','Digital',0,'');
+					}
+					$resO = $adb->pquery($sqlO,$dataO);
+					$detO = array();
+					$detO = $adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+					$tempAcv = $tempAcv+$detO['acvtotal'];
+					$tempTcv = $tempTcv+$detO['tcvtotal'];
+					$tempCount = $tempCount+$detO['potcount'];
+				}
+			}
+			$opList = '<div>('.$tempCount.') ACV - '.number_format($tempAcv,2).', TCV - '.number_format($tempTcv,2).'</div><br />'.$ssr;
+			$opArr[$row]['stage'][$oRow] = $opList;
+			if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM' && $ssr!= 'L3-Contract-LOI' && $ssr!= 'L2-In Transition' && $ssr!= 'L1-Go Live' && $ssr!= 'L0-Support'){
+				$g4TotalAcv = $g4TotalAcv+$tempAcv;
+				$g4TotalTcv = $g4TotalTcv+$tempTcv;
+				$g4TotalCount = $g4TotalCount+$tempCount;
+			}
+			$oRow++;
+		}
+		$opArr[$row]['user'] = '<strong>Grand Total L4-L8</strong>('.$g4TotalCount.') ACV - '.number_format($g4TotalAcv,2).', TCV - '.number_format($g4TotalTcv,2);
+		$row++;
+		//added sainadh end
+		
+		
+		foreach($detSM AS $ur){
+			$opArr[$row]['user'] = "<strong>Total</strong>";
+			$oRow = 0;
+			$acvGT = 0;
+			$tcvGT = 0;
+			
+			//added sainadh start
+			foreach($detSS AS $ssr){
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1093) AS acvtotal,SUM(vtiger_potentialscf.cf_1115) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1093) AS acvtotal,SUM(vtiger_potentialscf.cf_1115) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital',0,'');
+				}
+				
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				$detO=$adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+						// $opList .= '<div>ACV - '.number_format($detO['acvtotal'],2).', TCV - '.number_format($detO['tcvtotal'],2).'</div><br />'.$ssr;
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$acvGT = $acvGT+$detO['acvtotal'];
+				$tcvGT = $tcvGT+$detO['tcvtotal'];
+				$oRow++;
+				
+			}
+			// end sainadh	
+			
+			
+			$opArr[$row]['gtotal'] = 0;
+			if(!empty($ur['salesmanager'])){
+				if($ur['salesmanager'] == "Unknown"){
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Digital"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].'</a></strong> Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}else{
+					$smName = str_replace(" ","+",$ur['salesmanager']);
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=10&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1065"%2C"c"%2C"'.$smName.'"%5D%2C%5B"cf_1125"%2C"e"%2C"Digital"%5D%2C%5B"cf_1113"%2C"e"%2C"Active%2CInactive"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1163"%2C"assigned_user_id"%2C"cf_1065"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1125"%2C"cf_1113"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].'</a></strong> Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}
+			}else{
+				$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Digital"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+				$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">Unknown</a></strong> Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+			}
+			$opArr[$row]['totalflag'] = "0";
+			$oRow = 0;
+			foreach($detSS AS $ssr){
+				$gacv = 0;
+				$gtcv = 0;
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT vtiger_potential.potentialid,vtiger_potential.potentialname,vtiger_potential.sales_stage,vtiger_potentialscf.cf_1093 AS acv,vtiger_potentialscf.cf_1113 AS nextstep,vtiger_potentialscf.cf_1115 AS tcv,vtiger_potentialscf.cf_1375 AS oppage,vtiger_potentialscf.cf_1057 AS dateofrec,vtiger_account.accountname,vtiger_potentialscf.cf_1153 AS potid FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT vtiger_potential.potentialid,vtiger_potential.potentialname,vtiger_potential.sales_stage,vtiger_potentialscf.cf_1093 AS acv,vtiger_potentialscf.cf_1113 AS nextstep,vtiger_potentialscf.cf_1115 AS tcv,vtiger_potentialscf.cf_1375 AS oppage,vtiger_potentialscf.cf_1057 AS dateofrec,vtiger_account.accountname,vtiger_potentialscf.cf_1153 AS potid FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				while($detO=$adb->fetchByAssoc($resO)){
+					if(!empty($detO['potentialid'])){
+						if($detO['dateofrec']!= NULL || !empty($detO['dateofrec'])){
+							$date1 = $detO['dateofrec'];
+							$date2 = date('Y-m-d');
+							$date1_ts = strtotime($date1);
+							$date2_ts = strtotime($date2);
+							$diff = $date2_ts - $date1_ts;
+							$dateDiff =  round($diff / 86400);
+							$detO['oppage'] = $dateDiff;
+						}
+						if(($detO['sales_stage']=="L6-Solutioning" || $detO['sales_stage']=="L5-Price Bid") && ($detO['acv']<=0 || $detO['tcv']<=0)){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#FFBF00;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>90){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#CA0606;color:#FFFFFF;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>60){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#F45954;color:#FFFFFF;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>30){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#FCAAAA;color:#000000;">';
+						}else{
+							if($detO['dateofrec']!= NULL || !empty($detO['dateofrec'])){
+								if($detO['sales_stage']== "L1-Go Live"){
+									$opList .= '<div style="border-bottom:1px solid #000000;background-color:#4EC95D;color:#FFFFFF;">';
+								}else{
+									$opList .= '<div style="border-bottom:1px solid #000000;">';
+								}
+							}else{
+								$opList .= '<div style="border-bottom:1px solid #000000;background-color:#EFA12D;color:#FFFFFF;">';
+							}
+						}
+						if(empty($detO['potid'])){
+							$detO['potid'] = 'NA';
+						}
+						$opList .= '<strong><a href="?module=Potentials&view=Detail&record='.$detO['potentialid'].'&app=SALES" target="_blank" title="'.$detO['potentialname'].'">'.$detO['accountname'].'</strong></a><br />POT-ID '.$detO['potid'].'<br />ACV - '.number_format($detO['acv'],2).'<br />TCV - '.number_format($detO['tcv'],2).'('.$detO['nextstep'].')<br />Age - '.$detO['oppage'].'</div><br />'.$ssr;
+					}
+				}
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$oRow++;
+			}
+			$row++;
+			$opArr[$row]['user'] = "<strong>Total</strong>";
+			$oRow = 0;
+			$acvGT = 0;
+			$tcvGT = 0;
+			foreach($detSS AS $ssr){
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1093) AS acvtotal,SUM(vtiger_potentialscf.cf_1115) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1093) AS acvtotal,SUM(vtiger_potentialscf.cf_1115) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital',0,'');
+				}
+				
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				$detO=$adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+						$opList .= '<div>ACV - '.number_format($detO['acvtotal'],2).', TCV - '.number_format($detO['tcvtotal'],2).'</div><br />'.$ssr;
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$acvGT = $acvGT+$detO['acvtotal'];
+				$tcvGT = $tcvGT+$detO['tcvtotal'];
+				$oRow++;
+				
+			}
+			if(!empty($ur['salesmanager'])){
+				if($ur['salesmanager'] == "Unknown"){
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Digital"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].' Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}else{
+					$smName = str_replace(" ","+",$ur['salesmanager']);
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=10&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1065"%2C"c"%2C"'.$smName.'"%5D%2C%5B"cf_1125"%2C"e"%2C"Digital"%5D%2C%5B"cf_1113"%2C"e"%2C"Active%2CInactive"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1163"%2C"assigned_user_id"%2C"cf_1065"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1125"%2C"cf_1113"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].' Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}
+			}else{
+				$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Digital"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+				$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">Unknown Total </a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+			}
+			$opArr[$row]['totalflag'] = "1";
+			$row++;
+		}
+		
+		$oarList = '<tr style="background-color:#A5A5A5;"><td colspan="15"><strong><h4>Pure Digital Funnel</h4></strong></td></tr>';
+		for($pdofc=0;$pdofc<count($opArr);$pdofc++){
+			if($opArr[$pdofc]['gtotal']==1){
+				$oarList .= '<tr style="background-color:#008CD1;color:#FFFFFF;">';
+			}else if($oar['totalflag']==0){
+				$oarList .= '<tr>';
+			}else{
+				$oarList .= '<tr style="background-color:#C0CACE;">';
+			}
+			$oarList .= '<td valign="top" width="5%">'.$opArr[$pdofc]['user'].'</td>';
+			foreach($opArr[$pdofc]['stage'] AS $oars){
+				$oarList .= '<td valign="top" width="8%">'.$oars.'</td>';
+			}
+			$oarList .= '</tr>';
+		}
+		return $oarList;
+	}
+	
+	public function getDigitalBpmFunnel($sManager){
+		global $adb,$current_user;
+		
+		$detSS = $this->getSalesStages();
+		if($sManager== 'null' || empty($sManager)){
+			$detSM = $this->getSalesManagers();
+		}else{
+			$detSM = array();
+			for($smc=0;$smc<count($sManager);$smc++){
+				$detSM[$smc]['salesmanager'] = $sManager[$smc];
+			}
+		}
+		
+		$opArr = array();
+		$row = 0;
+		$oRow = 0;
+		$gTotalAcv = 0;
+		$gTotalTcv = 0;
+		$gTotalCount = 0;
+		foreach($detSS AS $ssr){
+			$tempAcv = 0;
+			$tempTcv = 0;
+			$tempCount = 0;
+			foreach($detSM AS $ur){
+				$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal,COUNT(*) AS potcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+				if(!empty($ur['salesmanager'])){
+					$dataO = array($ssr,'Zombie','Inactive','Digital Embedded',0,$ur['salesmanager']);
+				}else{
+					$dataO = array($ssr,'Zombie','Inactive','Digital Embedded',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$detO = $adb->fetchByAssoc($resO);
+				if(empty($detO['acvtotal'])){
+					$detO['acvtotal'] = 0;
+				}
+				if(empty($detO['tcvtotal'])){
+					$detO['tcvtotal'] = 0;
+				}
+				$tempAcv = $tempAcv+$detO['acvtotal'];
+				$tempTcv = $tempTcv+$detO['tcvtotal'];
+				$tempCount = $tempCount+$detO['potcount'];
+			}
+			$opList = '<div>('.$tempCount.') ACV - '.number_format($tempAcv,2).', TCV - '.number_format($tempTcv,2).'</div><br />'.$ssr;
+			$opArr[$row]['stage'][$oRow] = $opList;
+			if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM'){
+				$gTotalAcv = $gTotalAcv+$tempAcv;
+				$gTotalTcv = $gTotalTcv+$tempTcv;
+				$gTotalCount = $gTotalCount+$tempCount;
+			}
+			$oRow++;
+		}
+		$opArr[$row]['user'] = '<strong>Grand Total</strong>('.$gTotalCount.') ACV - '.number_format($gTotalAcv,2).', TCV - '.number_format($gTotalTcv,2);
+		$opArr[$row]['gtotal'] = 1;
+		$row++;
+		$g41TotalAcv = 0;
+		$g41TotalTcv = 0;
+		$g41TotalCount = 0;
+		//added sainadh start
+		foreach($detSS AS $ssr){
+			$tempAcv = 0;
+			$tempTcv = 0;
+			$tempCount = 0;
+			foreach($detSM AS $ur){
+				if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM' && $ssr!= 'L3-Contract-LOI' && $ssr!= 'L2-In Transition' && $ssr!= 'L1-Go Live' && $ssr!= 'L0-Support'){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal,COUNT(*) AS potcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					if(!empty($ur['salesmanager'])){
+						$dataO = array($ssr,'Zombie','Inactive','Digital Embedded',0,$ur['salesmanager']);
+					}else{
+						$dataO = array($ssr,'Zombie','Inactive','Digital Embedded',0,'');
+					}
+					$resO = $adb->pquery($sqlO,$dataO);
+					$detO = array();
+					$detO = $adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+					$tempAcv = $tempAcv+$detO['acvtotal'];
+					$tempTcv = $tempTcv+$detO['tcvtotal'];
+					$tempCount = $tempCount+$detO['potcount'];
+				}
+			}
+			$opList = '<div>('.$tempCount.') ACV - '.number_format($tempAcv,2).', TCV - '.number_format($tempTcv,2).'</div><br />'.$ssr;
+			$opArr[$row]['stage'][$oRow] = $opList;
+			if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM' && $ssr!= 'L3-Contract-LOI' && $ssr!= 'L2-In Transition' && $ssr!= 'L1-Go Live' && $ssr!= 'L0-Support'){
+				$g41TotalAcv = $g41TotalAcv+$tempAcv;
+				$g41TotalTcv = $g41TotalTcv+$tempTcv;
+				$g41TotalCount = $g41TotalCount+$tempCount;
+			}
+			$oRow++;
+		}
+		$opArr[$row]['user'] = '<strong>Grand Total L4-L8</strong>('.$g41TotalCount.') ACV - '.number_format($g41TotalAcv,2).', TCV - '.number_format($g41TotalTcv,2);
+		$row++;
+		
+		
+		// end sainadh	
+		
+		foreach($detSM AS $ur){
+			$opArr[$row]['user'] = "<strong>Total</strong>";
+			$oRow = 0;
+			$acvGT = 0;
+			$tcvGT = 0;
+			foreach($detSS AS $ssr){
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital Embedded',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital Embedded',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				$detO=$adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+						$opList .= '<div>ACV - '.number_format($detO['acvtotal'],2).', TCV - '.number_format($detO['tcvtotal'],2).'</div><br />'.$ssr;
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$acvGT = $acvGT+$detO['acvtotal'];
+				$tcvGT = $tcvGT+$detO['tcvtotal'];
+				$oRow++;
+				
+			}
+			if(!empty($ur['salesmanager'])){
+				if($ur['salesmanager'] == "Unknown"){
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Digital+Embedded"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].'</a></strong>Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}else{
+					$smName = str_replace(" ","+",$ur['salesmanager']);
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=10&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1065"%2C"c"%2C"'.$smName.'"%5D%2C%5B"cf_1125"%2C"e"%2C"Digital+Embedded"%5D%2C%5B"cf_1113"%2C"e"%2C"Active%2CInactive"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1163"%2C"assigned_user_id"%2C"cf_1065"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1125"%2C"cf_1113"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].'</a></strong>Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}
+			}else{
+				$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Digital+Embedded"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+				$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">Unknown</a></strong>Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+			}
+			$opArr[$row]['totalflag'] = "0";
+			$oRow = 0;
+			foreach($detSS AS $ssr){
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT vtiger_potential.potentialid,vtiger_potential.potentialname,vtiger_potential.sales_stage,vtiger_potentialscf.cf_1253 AS acv,vtiger_potentialscf.cf_1113 AS nextstep,vtiger_potentialscf.cf_1255 AS tcv,vtiger_potentialscf.cf_1375 AS oppage,vtiger_potentialscf.cf_1057 AS dateofrec,vtiger_account.accountname FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital Embedded',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT vtiger_potential.potentialid,vtiger_potential.potentialname,vtiger_potential.sales_stage,vtiger_potentialscf.cf_1253 AS acv,vtiger_potentialscf.cf_1113 AS nextstep,vtiger_potentialscf.cf_1255 AS tcv,vtiger_potentialscf.cf_1375 AS oppage,vtiger_potentialscf.cf_1057 AS dateofrec,vtiger_account.accountname FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital Embedded',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				while($detO=$adb->fetchByAssoc($resO)){
+					if(!empty($detO['potentialid'])){
+						if($detO['dateofrec']!= NULL || !empty($detO['dateofrec'])){
+							$date1 = $detO['dateofrec'];
+							$date2 = date('Y-m-d');
+							$date1_ts = strtotime($date1);
+							$date2_ts = strtotime($date2);
+							$diff = $date2_ts - $date1_ts;
+							$dateDiff =  round($diff / 86400);
+							$detO['oppage'] = $dateDiff;
+						}
+						if(($detO['sales_stage']=="L6-Solutioning" || $detO['sales_stage']=="L5-Price Bid") && ($detO['acv']<=0 || $detO['tcv']<=0)){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#FFBF00;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>90){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#CA0606;color:#FFFFFF;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>60){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#F45954;color:#FFFFFF;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>30){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#FCAAAA;color:#000000;">';
+						}else{
+							if($detO['dateofrec']!= NULL || !empty($detO['dateofrec'])){
+								if($detO['sales_stage']== "L1-Go Live"){
+									$opList .= '<div style="border-bottom:1px solid #000000;background-color:#4EC95D;color:#FFFFFF;">';
+								}else{
+									$opList .= '<div style="border-bottom:1px solid #000000;">';
+								}
+							}else{
+								$opList .= '<div style="border-bottom:1px solid #000000;background-color:#EFA12D;color:#FFFFFF;">';
+							}
+						}
+						$opList .= '<strong><a href="?module=Potentials&view=Detail&record='.$detO['potentialid'].'&app=SALES" target="_blank" title="'.$detO['potentialname'].'">'.$detO['accountname'].'</strong></a><br />ACV - '.number_format($detO['acv'],2).', TCV - '.number_format($detO['tcv'],2).'('.$detO['nextstep'].'), Age - '.$detO['oppage'].'</div><br />'.$ssr;
+					}
+				}
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$oRow++;
+			}
+			$row++;
+			$opArr[$row]['user'] = "<strong>Total</strong>";
+			$oRow = 0;
+			$acvGT = 0;
+			$tcvGT = 0;
+			foreach($detSS AS $ssr){
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital Embedded',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Digital Embedded',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				$detO=$adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+						$opList .= '<div>ACV - '.number_format($detO['acvtotal'],2).', TCV - '.number_format($detO['tcvtotal'],2).'</div><br />'.$ssr;
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$acvGT = $acvGT+$detO['acvtotal'];
+				$tcvGT = $tcvGT+$detO['tcvtotal'];
+				$oRow++;
+				
+			}
+			if(!empty($ur['salesmanager'])){
+				if($ur['salesmanager'] == "Unknown"){
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Digital+Embedded"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].' Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}else{
+					$smName = str_replace(" ","+",$ur['salesmanager']);
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=10&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1065"%2C"c"%2C"'.$smName.'"%5D%2C%5B"cf_1125"%2C"e"%2C"Digital+Embedded"%5D%2C%5B"cf_1113"%2C"e"%2C"Active%2CInactive"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1163"%2C"assigned_user_id"%2C"cf_1065"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1125"%2C"cf_1113"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].' Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}
+			}else{
+				$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Digital+Embedded"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+				$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">Unknown Total </a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+			}
+			
+			$opArr[$row]['totalflag'] = "1";
+			$row++;
+		}
+		$oarList = '<tr style="background-color:#A5A5A5;"><td colspan="15"><strong><h4>Digital-BPM: Embedded Funnel</h4></strong></td></tr>';
+		for($pdofc=0;$pdofc<count($opArr);$pdofc++){
+			if($opArr[$pdofc]['gtotal']==1){
+				$oarList .= '<tr style="background-color:#008CD1;color:#FFFFFF;">';
+			}else if($oar['totalflag']==0){
+				$oarList .= '<tr>';
+			}else{
+				$oarList .= '<tr style="background-color:#C0CACE;">';
+			}
+			$oarList .= '<td valign="top" width="5%">'.$opArr[$pdofc]['user'].'</td>';
+			foreach($opArr[$pdofc]['stage'] AS $oars){
+				$oarList .= '<td valign="top" width="8%">'.$oars.'</td>';
+			}
+			$oarList .= '</tr>';
+		}
+		return $oarList;
+	}
+	
+	public function getTraditionalFunnel($sManager){
+		global $adb,$current_user;
+		
+		$detSS = $this->getSalesStages();
+		if($sManager== 'null' || empty($sManager)){
+			$detSM = $this->getSalesManagers();
+		}else{
+			$detSM = array();
+			for($smc=0;$smc<count($sManager);$smc++){
+				$detSM[$smc]['salesmanager'] = $sManager[$smc];
+			}
+		}
+		
+		$opArr = array();
+		$row = 0;
+		$oRow = 0;
+		$gTotalAcv = 0;
+		$gTotalTcv = 0;
+		$gTotalCount = 0;
+		foreach($detSS AS $ssr){
+			$tempAcv = 0;
+			$tempTcv = 0;
+			$tempCount = 0;
+			foreach($detSM AS $ur){
+				$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal,COUNT(*) AS potcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+				if(!empty($ur['salesmanager'])){
+					$dataO = array($ssr,'Zombie','Inactive','Traditional',0,$ur['salesmanager']);
+				}else{
+					$dataO = array($ssr,'Zombie','Inactive','Traditional',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$detO = $adb->fetchByAssoc($resO);
+				if(empty($detO['acvtotal'])){
+					$detO['acvtotal'] = 0;
+				}
+				if(empty($detO['tcvtotal'])){
+					$detO['tcvtotal'] = 0;
+				}
+				$tempAcv = $tempAcv+$detO['acvtotal'];
+				$tempTcv = $tempTcv+$detO['tcvtotal'];
+				$tempCount = $tempCount+$detO['potcount'];
+			}
+			$opList = '<div>('.$tempCount.') ACV - '.number_format($tempAcv,2).', TCV - '.number_format($tempTcv,2).'</div><br />'.$ssr;
+			$opArr[$row]['stage'][$oRow] = $opList;
+			if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM'){
+				$gTotalAcv = $gTotalAcv+$tempAcv;
+				$gTotalTcv = $gTotalTcv+$tempTcv;
+				$gTotalCount = $gTotalCount+$tempCount;
+			}
+			$oRow++;
+		}
+		$opArr[$row]['user'] = '<strong>Grand Total</strong>('.$gTotalCount.') ACV - '.number_format($gTotalAcv,2).', TCV - '.number_format($gTotalTcv,2);
+		$opArr[$row]['gtotal'] = 1;
+		$row++;
+		
+		$g42TotalAcv = 0;
+		$g42TotalTcv = 0;
+		$g42TotalCount = 0;
+		//added sainadh start
+		foreach($detSS AS $ssr){
+			$tempAcv = 0;
+			$tempTcv = 0;
+			$tempCount = 0;
+			foreach($detSM AS $ur){
+				if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM' && $ssr!= 'L3-Contract-LOI' && $ssr!= 'L2-In Transition' && $ssr!= 'L1-Go Live' && $ssr!= 'L0-Support'){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal,COUNT(*) AS potcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					if(!empty($ur['salesmanager'])){
+						$dataO = array($ssr,'Zombie','Inactive','Traditional',0,$ur['salesmanager']);
+					}else{
+						$dataO = array($ssr,'Zombie','Inactive','Traditional',0,'');
+					}
+					$resO = $adb->pquery($sqlO,$dataO);
+					$detO = array();
+					$detO = $adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+					$tempAcv = $tempAcv+$detO['acvtotal'];
+					$tempTcv = $tempTcv+$detO['tcvtotal'];
+					$tempCount = $tempCount+$detO['potcount'];
+				}
+			}
+			$opList = '<div>('.$tempCount.') ACV - '.number_format($tempAcv,2).', TCV - '.number_format($tempTcv,2).'</div><br />'.$ssr;
+			$opArr[$row]['stage'][$oRow] = $opList;
+			if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM' && $ssr!= 'L3-Contract-LOI' && $ssr!= 'L2-In Transition' && $ssr!= 'L1-Go Live' && $ssr!= 'L0-Support'){
+				$g42TotalAcv = $g42TotalAcv+$tempAcv;
+				$g42TotalTcv = $g42TotalTcv+$tempTcv;
+				$g42TotalCount = $g42TotalCount+$tempCount;
+			}
+			$oRow++;
+		}
+		$opArr[$row]['user'] = '<strong>Grand Total L4-L8</strong>('.$g42TotalCount.') ACV - '.number_format($g42TotalAcv,2).', TCV - '.number_format($g42TotalTcv,2);
+		$row++;
+		
+		
+		// end sainadh
+		foreach($detSM AS $ur){
+			$opArr[$row]['user'] = "<strong>Total</strong>";
+			$oRow = 0;
+			$acvGT = 0;
+			$tcvGT = 0;
+			foreach($detSS AS $ssr){
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Traditional',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Traditional',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				$detO=$adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+					//	$opList .= '<div>ACV - '.number_format($detO['acvtotal'],2).', TCV - '.number_format($detO['tcvtotal'],2).'</div><br />'.$ssr;
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$acvGT = $acvGT+$detO['acvtotal'];
+				$tcvGT = $tcvGT+$detO['tcvtotal'];
+				$oRow++;
+				
+			}
+			if(!empty($ur['salesmanager'])){
+				if($ur['salesmanager'] == "Unknown"){
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Traditional"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].'</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}else{
+					$smName = str_replace(" ","+",$ur['salesmanager']);
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=10&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1065"%2C"c"%2C"'.$smName.'"%5D%2C%5B"cf_1125"%2C"e"%2C"Traditional"%5D%2C%5B"cf_1113"%2C"e"%2C"Active%2CInactive"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1163"%2C"assigned_user_id"%2C"cf_1065"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1125"%2C"cf_1113"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].'</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}
+			}else{
+				$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Traditional"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+				$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">Unknown</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+			}
+			$opArr[$row]['totalflag'] = "0";
+			$oRow = 0;
+			foreach($detSS AS $ssr){
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT vtiger_potential.potentialid,vtiger_potential.potentialname,vtiger_potential.sales_stage,vtiger_potentialscf.cf_1253 AS acv,vtiger_potentialscf.cf_1113 AS nextstep,vtiger_potentialscf.cf_1255 AS tcv,vtiger_potentialscf.cf_1375 AS oppage,vtiger_potentialscf.cf_1057 AS dateofrec,vtiger_account.accountname FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Traditional',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT vtiger_potential.potentialid,vtiger_potential.potentialname,vtiger_potential.sales_stage,vtiger_potentialscf.cf_1253 AS acv,vtiger_potentialscf.cf_1113 AS nextstep,vtiger_potentialscf.cf_1255 AS tcv,vtiger_potentialscf.cf_1375 AS oppage,vtiger_potentialscf.cf_1057 AS dateofrec,vtiger_account.accountname FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Traditional',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				while($detO=$adb->fetchByAssoc($resO)){
+					if(!empty($detO['potentialid'])){
+						if($detO['dateofrec']!= NULL || !empty($detO['dateofrec'])){
+							$date1 = $detO['dateofrec'];
+							$date2 = date('Y-m-d');
+							$date1_ts = strtotime($date1);
+							$date2_ts = strtotime($date2);
+							$diff = $date2_ts - $date1_ts;
+							$dateDiff =  round($diff / 86400);
+							$detO['oppage'] = $dateDiff;
+						}
+						if(($detO['sales_stage']=="L6-Solutioning" || $detO['sales_stage']=="L5-Price Bid") && ($detO['acv']<=0 || $detO['tcv']<=0)){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#FFBF00;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>90){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#CA0606;color:#FFFFFF;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>60){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#F45954;color:#FFFFFF;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>30){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#FCAAAA;color:#000000;">';
+						}else{
+							if($detO['dateofrec']!= NULL || !empty($detO['dateofrec'])){
+								if($detO['sales_stage']== "L1-Go Live"){
+									$opList .= '<div style="border-bottom:1px solid #000000;background-color:#4EC95D;color:#FFFFFF;">';
+								}else{
+									$opList .= '<div style="border-bottom:1px solid #000000;">';
+								}
+							}else{
+								$opList .= '<div style="border-bottom:1px solid #000000;background-color:#EFA12D;color:#FFFFFF;">';
+							}
+						}
+						$opList .= '<strong><a href="?module=Potentials&view=Detail&record='.$detO['potentialid'].'&app=SALES" target="_blank" title="'.$detO['potentialname'].'">'.$detO['accountname'].'</strong></a><br />ACV - '.number_format($detO['acv'],2).', TCV - '.number_format($detO['tcv'],2).'('.$detO['nextstep'].'), Age - '.$detO['oppage'].'</div><br />'.$ssr;
+					}
+				}
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$oRow++;
+			}
+			$row++;
+			$opArr[$row]['user'] = "<strong>Total</strong>";
+			$oRow = 0;
+			$acvGT = 0;
+			$tcvGT = 0;
+			foreach($detSS AS $ssr){
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Traditional',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Traditional',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				$detO=$adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+						$opList .= '<div>ACV - '.number_format($detO['acvtotal'],2).', TCV - '.number_format($detO['tcvtotal'],2).'</div><br />'.$ssr;
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$acvGT = $acvGT+$detO['acvtotal'];
+				$tcvGT = $tcvGT+$detO['tcvtotal'];
+				$oRow++;
+				
+			}
+			if(!empty($ur['salesmanager'])){
+				if($ur['salesmanager'] == "Unknown"){
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Traditional"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].' Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}else{
+					$smName = str_replace(" ","+",$ur['salesmanager']);
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=10&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1065"%2C"c"%2C"'.$smName.'"%5D%2C%5B"cf_1125"%2C"e"%2C"Traditional"%5D%2C%5B"cf_1113"%2C"e"%2C"Active%2CInactive"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1163"%2C"assigned_user_id"%2C"cf_1065"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1125"%2C"cf_1113"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].' Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}
+			}else{
+				$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Traditional"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+				$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">Unknown Total </a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+			}
+			
+			$opArr[$row]['totalflag'] = "1";
+			$row++;
+		}
+		$oarList = '<tr style="background-color:#A5A5A5;"><td colspan="15"><strong><h4>Traditional Funnel</h4></strong></td></tr>';
+		for($pdofc=0;$pdofc<count($opArr);$pdofc++){
+			if($opArr[$pdofc]['gtotal']==1){
+				$oarList .= '<tr style="background-color:#008CD1;color:#FFFFFF;">';
+			}else if($oar['totalflag']==0){
+				$oarList .= '<tr>';
+			}else{
+				$oarList .= '<tr style="background-color:#C0CACE;">';
+			}
+			$oarList .= '<td valign="top" width="5%">'.$opArr[$pdofc]['user'].'</td>';
+			foreach($opArr[$pdofc]['stage'] AS $oars){
+				$oarList .= '<td valign="top" width="8%">'.$oars.'</td>';
+			}
+			$oarList .= '</tr>';
+		}
+		return $oarList;
+	}
+	
+	public function getInternalDigitalBpmFunnel($sManager){
+		global $adb,$current_user;
+		
+		$detSS = $this->getSalesStages();
+		if($sManager== 'null' || empty($sManager)){
+			$detSM = $this->getSalesManagers();
+		}else{
+			$detSM = array();
+			for($smc=0;$smc<count($sManager);$smc++){
+				$detSM[$smc]['salesmanager'] = $sManager[$smc];
+			}
+		}
+		
+		$opArr = array();
+		$row = 0;
+		$oRow = 0;
+		$gTotalAcv = 0;
+		$gTotalTcv = 0;
+		$gTotalCount = 0;
+		foreach($detSS AS $ssr){
+			$tempAcv = 0;
+			$tempTcv = 0;
+			$tempCount = 0;
+			foreach($detSM AS $ur){
+				$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal,COUNT(*) AS potcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+				if(!empty($ur['salesmanager'])){
+					$dataO = array($ssr,'Zombie','Inactive','Internal-Digital-BPM',0,$ur['salesmanager']);
+				}else{
+					$dataO = array($ssr,'Zombie','Inactive','Internal-Digital-BPM',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$detO = $adb->fetchByAssoc($resO);
+				if(empty($detO['acvtotal'])){
+					$detO['acvtotal'] = 0;
+				}
+				if(empty($detO['tcvtotal'])){
+					$detO['tcvtotal'] = 0;
+				}
+				$tempAcv = $tempAcv+$detO['acvtotal'];
+				$tempTcv = $tempTcv+$detO['tcvtotal'];
+				$tempCount = $tempCount+$detO['potcount'];
+			}
+			$opList = '<div>('.$tempCount.') ACV - '.number_format($tempAcv,2).', TCV - '.number_format($tempTcv,2).'</div><br />'.$ssr;
+			$opArr[$row]['stage'][$oRow] = $opList;
+			if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM'){
+				$gTotalAcv = $gTotalAcv+$tempAcv;
+				$gTotalTcv = $gTotalTcv+$tempTcv;
+				$gTotalCount = $gTotalCount+$tempCount;
+			}
+			$oRow++;
+		}
+		$opArr[$row]['user'] = '<strong>Grand Total</strong>('.$gTotalCount.') ACV - '.number_format($gTotalAcv,2).', TCV - '.number_format($gTotalTcv,2);
+		$opArr[$row]['gtotal'] = 1;
+		$row++;
+		
+		$g43TotalAcv = 0;
+		$g43TotalTcv = 0;
+		$g43TotalCount = 0;
+		//added sainadh start
+		foreach($detSS AS $ssr){
+			$tempAcv = 0;
+			$tempTcv = 0;
+			$tempCount = 0;
+			foreach($detSM AS $ur){
+				if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM' && $ssr!= 'L3-Contract-LOI' && $ssr!= 'L2-In Transition' && $ssr!= 'L1-Go Live' && $ssr!= 'L0-Support'){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal,COUNT(*) AS potcount FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					if(!empty($ur['salesmanager'])){
+						$dataO = array($ssr,'Zombie','Inactive','Internal-Digital-BPM',0,$ur['salesmanager']);
+					}else{
+						$dataO = array($ssr,'Zombie','Inactive','Internal-Digital-BPM',0,'');
+					}
+					$resO = $adb->pquery($sqlO,$dataO);
+					$detO = array();
+					$detO = $adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+					$tempAcv = $tempAcv+$detO['acvtotal'];
+					$tempTcv = $tempTcv+$detO['tcvtotal'];
+					$tempCount = $tempCount+$detO['potcount'];
+				}
+			}
+			$opList = '<div>('.$tempCount.') ACV - '.number_format($tempAcv,2).', TCV - '.number_format($tempTcv,2).'</div><br />'.$ssr;
+			$opArr[$row]['stage'][$oRow] = $opList;
+			if($ssr!= 'L-1-End-Project' && $ssr!= 'L11-On Hold' && $ssr!= 'L10-No Bid' && $ssr!= 'L9-Lost Order' && $ssr!= 'L13-Lost for Digital-BPM' && $ssr!= 'L3-Contract-LOI' && $ssr!= 'L2-In Transition' && $ssr!= 'L1-Go Live' && $ssr!= 'L0-Support'){
+				$g43TotalAcv = $g43TotalAcv+$tempAcv;
+				$g43TotalTcv = $g43TotalTcv+$tempTcv;
+				$g43TotalCount = $g43TotalCount+$tempCount;
+			}
+			$oRow++;
+		}
+		$opArr[$row]['user'] = '<strong>Grand Total L4-L8</strong>('.$g43TotalCount.') ACV - '.number_format($g43TotalAcv,2).', TCV - '.number_format($g43TotalTcv,2);
+		$row++;
+		
+		
+		// end sainadh
+		foreach($detSM AS $ur){
+			$opArr[$row]['user'] = "<strong>Total</strong>";
+			$oRow = 0;
+			$acvGT = 0;
+			$tcvGT = 0;
+			foreach($detSS AS $ssr){
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Internal-Digital-BPM',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Internal-Digital-BPM',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				$detO=$adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+						// $opList .= '<div>ACV - '.number_format($detO['acvtotal'],2).', TCV - '.number_format($detO['tcvtotal'],2).'</div><br />'.$ssr;
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$acvGT = $acvGT+$detO['acvtotal'];
+				$tcvGT = $tcvGT+$detO['tcvtotal'];
+				$oRow++;
+				
+			}
+			if(!empty($ur['salesmanager'])){
+				if($ur['salesmanager'] == "Unknown"){
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Internal-Digital-BPM"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].'</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}else{
+					$smName = str_replace(" ","+",$ur['salesmanager']);
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=10&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1065"%2C"c"%2C"'.$smName.'"%5D%2C%5B"cf_1125"%2C"e"%2C"Internal-Digital-BPM"%5D%2C%5B"cf_1113"%2C"e"%2C"Active%2CInactive"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1163"%2C"assigned_user_id"%2C"cf_1065"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1125"%2C"cf_1113"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].'</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}
+			}else{
+				$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Internal-Digital-BPM"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+				$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">Unknown</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+			}
+			$opArr[$row]['totalflag'] = "0";
+			$oRow = 0;
+			foreach($detSS AS $ssr){
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT vtiger_potential.potentialid,vtiger_potential.potentialname,vtiger_potential.sales_stage,vtiger_potentialscf.cf_1253 AS acv,vtiger_potentialscf.cf_1113 AS nextstep,vtiger_potentialscf.cf_1255 AS tcv,vtiger_potentialscf.cf_1375 AS oppage,vtiger_potentialscf.cf_1057 AS dateofrec,vtiger_account.accountname FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Internal-Digital-BPM',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT vtiger_potential.potentialid,vtiger_potential.potentialname,vtiger_potential.sales_stage,vtiger_potentialscf.cf_1253 AS acv,vtiger_potentialscf.cf_1113 AS nextstep,vtiger_potentialscf.cf_1255 AS tcv,vtiger_potentialscf.cf_1375 AS oppage,vtiger_potentialscf.cf_1057 AS dateofrec,vtiger_account.accountname FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Internal-Digital-BPM',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				while($detO=$adb->fetchByAssoc($resO)){
+					if(!empty($detO['potentialid'])){
+						if($detO['dateofrec']!= NULL || !empty($detO['dateofrec'])){
+							$date1 = $detO['dateofrec'];
+							$date2 = date('Y-m-d');
+							$date1_ts = strtotime($date1);
+							$date2_ts = strtotime($date2);
+							$diff = $date2_ts - $date1_ts;
+							$dateDiff =  round($diff / 86400);
+							$detO['oppage'] = $dateDiff;
+						}
+						if(($detO['sales_stage']=="L6-Solutioning" || $detO['sales_stage']=="L5-Price Bid") && ($detO['acv']<=0 || $detO['tcv']<=0)){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#FFBF00;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>90){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#CA0606;color:#FFFFFF;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>60){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#F45954;color:#FFFFFF;">';
+						}else if($detO['sales_stage']!= "L1-Go Live" && $detO['sales_stage']!= "L0-Support" && $detO['sales_stage']!= "L-1-End-Project" && $detO['oppage']>30){
+							$opList .= '<div style="border-bottom:1px solid #000000;background-color:#FCAAAA;color:#000000;">';
+						}else{
+							if($detO['dateofrec']!= NULL || !empty($detO['dateofrec'])){
+								if($detO['sales_stage']== "L1-Go Live"){
+									$opList .= '<div style="border-bottom:1px solid #000000;background-color:#4EC95D;color:#FFFFFF;">';
+								}else{
+									$opList .= '<div style="border-bottom:1px solid #000000;">';
+								}
+							}else{
+								$opList .= '<div style="border-bottom:1px solid #000000;background-color:#EFA12D;color:#FFFFFF;">';
+							}
+						}
+						$opList .= '<strong><a href="?module=Potentials&view=Detail&record='.$detO['potentialid'].'&app=SALES" target="_blank" title="'.$detO['potentialname'].'">'.$detO['accountname'].'</strong></a><br />ACV - '.number_format($detO['acv'],2).', TCV - '.number_format($detO['tcv'],2).'('.$detO['nextstep'].'), Age - '.$detO['oppage'].'</div><br />'.$ssr;
+					}
+				}
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$oRow++;
+			}
+			$row++;
+			$opArr[$row]['user'] = "<strong>Total</strong>";
+			$oRow = 0;
+			$acvGT = 0;
+			$tcvGT = 0;
+			foreach($detSS AS $ssr){
+				if(!empty($ur['salesmanager'])){
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Internal-Digital-BPM',0,$ur['salesmanager']);
+				}else{
+					$sqlO = "SELECT SUM(vtiger_potentialscf.cf_1253) AS acvtotal,SUM(vtiger_potentialscf.cf_1255) AS tcvtotal FROM vtiger_potential INNER JOIN vtiger_potentialscf ON vtiger_potential.potentialid=vtiger_potentialscf.potentialid INNER JOIN vtiger_crmentity ON vtiger_potentialscf.potentialid=vtiger_crmentity.crmid INNER JOIN vtiger_account ON vtiger_potential.related_to=vtiger_account.accountid WHERE vtiger_potential.sales_stage=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1113!=? AND vtiger_potentialscf.cf_1125=? AND vtiger_crmentity.deleted=? AND vtiger_potentialscf.cf_1065=?";
+					$dataO = array($ssr,'Zombie','Inactive','Internal-Digital-BPM',0,'');
+				}
+				$resO = $adb->pquery($sqlO,$dataO);
+				$detO = array();
+				$opList = '';
+				$detO=$adb->fetchByAssoc($resO);
+					if(empty($detO['acvtotal'])){
+						$detO['acvtotal'] = 0;
+					}
+					if(empty($detO['tcvtotal'])){
+						$detO['tcvtotal'] = 0;
+					}
+						$opList .= '<div>ACV - '.number_format($detO['acvtotal'],2).', TCV - '.number_format($detO['tcvtotal'],2).'</div><br />'.$ssr;
+				$opArr[$row]['stage'][$oRow] = $opList;
+				$acvGT = $acvGT+$detO['acvtotal'];
+				$tcvGT = $tcvGT+$detO['tcvtotal'];
+				$oRow++;
+				
+			}
+			if(!empty($ur['salesmanager'])){
+				if($ur['salesmanager'] == "Unknown"){
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Internal-Digital-BPM"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].' Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}else{
+					$smName = str_replace(" ","+",$ur['salesmanager']);
+					$url = '?module=Potentials&parent=&page=1&view=List&viewname=10&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1065"%2C"c"%2C"'.$smName.'"%5D%2C%5B"cf_1125"%2C"e"%2C"Internal-Digital-BPM"%5D%2C%5B"cf_1113"%2C"e"%2C"Active%2CInactive"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1163"%2C"assigned_user_id"%2C"cf_1065"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1125"%2C"cf_1113"%5D&tag=';
+					$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">'.$ur['salesmanager'].' Total</a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+				}
+			}else{
+				$url = '?module=Potentials&parent=&page=1&view=List&viewname=70&orderby=&sortorder=&app=SALES&search_params=%5B%5B%5B"cf_1125"%2C"e"%2C"Internal-Digital-BPM"%5D%5D%5D&tag_params=%5B%5D&nolistcache=0&list_headers=%5B"potentialname"%2C"cf_1153"%2C"related_to"%2C"cf_1063"%2C"cf_1061"%2C"cf_1065"%2C"cf_1067"%2C"assigned_user_id"%2C"cf_1117"%2C"cf_1057"%2C"sales_stage"%2C"leadsource"%2C"createdtime"%2C"closingdate"%2C"cf_1113"%2C"cf_1125"%5D&tag=';
+				$opArr[$row]['user'] = '<strong><a href="'.htmlentities($url).'" target="_blank">Unknown Total </a></strong> ACV - '.number_format($acvGT,2).', TCV - '.number_format($tcvGT,2);
+			}
+			
+			$opArr[$row]['totalflag'] = "1";
+			$row++;
+		}
+		$oarList = '<tr style="background-color:#A5A5A5;"><td colspan="15"><strong><h4>Internal-Digital-BPM Funnel</h4></strong></td></tr>';
+		for($pdofc=0;$pdofc<count($opArr);$pdofc++){
+			if($opArr[$pdofc]['gtotal']==1){
+				$oarList .= '<tr style="background-color:#008CD1;color:#FFFFFF;">';
+			}else if($oar['totalflag']==0){
+				$oarList .= '<tr>';
+			}else{
+				$oarList .= '<tr style="background-color:#C0CACE;">';
+			}
+			$oarList .= '<td valign="top" width="5%">'.$opArr[$pdofc]['user'].'</td>';
+			foreach($opArr[$pdofc]['stage'] AS $oars){
+				$oarList .= '<td valign="top" width="8%">'.$oars.'</td>';
+			}
+			$oarList .= '</tr>';
+		}
+		return $oarList;
+	}
+	
+	public function getSalesFilteredFunnel($funnelType,$sManager){
+		global $adb,$current_user;
+		$smList = '';
+		for($smc=0;$smc<count($sManager);$smc++){
+			$smList .= $sManager[$smc]." / ";
+		}
+		return $smList;
+	}
+	
+	
+	public function sendEodMailer(){
+		global $current_user;
+		require_once('PHPMailer/PHPMailerAutoload.php');
+		
+		if($_POST['serverType'] == "O365"){
+			$host = 'smtp.office365.com';
+			$port = '587';
+		}else if($_POST['serverType'] == "Mail Exchange"){
+			$host = '10.64.194.167';
+			$port = '25';
+		}
+		$mail = new PHPMailer;
+		$mail->isSMTP();
+		$mail->Host = $host;
+		$mail->Port = $port;
+		$mail->SMTPAuth = true;
+		$mail->Username = $_POST['emailAddress'];
+		$mail->Password = $_POST['emailPassword'];
+		$mail->SMTPSecure = 'tls';
+		$mail->SMTPDebug = '0';
+		$mail->From = $_POST['emailAddress'];
+		$mail->FromName = $current_user->first_name." ".$current_user->last_name;
+		$mail->addReplyTo($_POST['emailAddress'],$current_user->first_name." ".$current_user->last_name);
+		$mail->WordWrap = 50;
+		$mail->isHTML(true);
+		$mail->Subject = 'BTS-EOD Update: '.$current_user->first_name.' '.$current_user->last_name.' || '.date('d-M-Y');
+		$mail->addAddress($current_user->email1,$current_user->first_name." ".$current_user->last_name);
+		// $mail->addAddress("rinoo.rajesh@conneqtcorp.com","Rinoo Rajesh");
+		$mail->Body = $this->eodTaskDetail();
+		// $mail->Body = 'Test Mail';
+		if($mail->send()) {
+			return "Done Ok";
+		}else{
+			return "Failed";
+		}
+	}
+	
+	public function eodTaskDetail(){
+		global $adb,$current_user;
+		
+		$sqlTasks = "SELECT vtiger_projecttask.projecttaskid,vtiger_projecttask.projecttaskname,vtiger_projecttask.startdate,vtiger_projecttaskcf.cf_911 AS starttime,vtiger_projecttaskcf.cf_915 AS enddate,vtiger_projecttaskcf.cf_917 AS endtime,vtiger_project.projectname,vtiger_projectcf.cf_859 AS costcode FROM vtiger_projecttask INNER JOIN vtiger_projecttaskcf ON vtiger_projecttask.projecttaskid=vtiger_projecttaskcf.projecttaskid INNER JOIN vtiger_crmentity ON vtiger_projecttaskcf.projecttaskid=vtiger_crmentity.crmid INNER JOIN vtiger_project ON vtiger_projecttask.projectid=vtiger_project.projectid INNER JOIN vtiger_projectcf ON vtiger_project.projectid=vtiger_projectcf.projectid WHERE vtiger_crmentity.smownerid=? AND vtiger_crmentity.deleted=? ORDER BY vtiger_projecttask.projecttaskid DESC";
+		$dataTasks = array($current_user->id,0);
+		$resTasks = $adb->pquery($sqlTasks,$dataTasks);
+		$detTasks = array();
+		$taskTable = '<table border="1"><tr><th>Task</th><th>Project</th><th>Cost Code</th><th>Start Date-Time</th><th>End Date-Time</th></tr>';
+		while($detTasks=$adb->fetchByAssoc($resTasks)){
+			if(!empty($detTasks['projecttaskid'])){
+				if(empty($detTasks['starttime'])){
+					$detTasks['starttime'] = '00:00:00';
+				}
+				if(empty($detTasks['endtime'])){
+					$detTasks['endtime'] = '00:00:00';
+				}
+				$taskTable .= '<tr><td>'.$detTasks['projecttaskname'].'</td><td>'.$detTasks['projectname'].'</td><td>'.$detTasks['costcode'].'</td><td>'.date('d-M-Y h:i A',strtotime($detTasks['startdate'].' '.$detTasks['starttime'])).'</td><td>'.date('d-M-Y h:i A',strtotime($detTasks['enddate'].' '.$detTasks['endtime'])).'</td></tr>';
+			}
+		}
+		$taskTable .= '</table>';
+		$message = '<div><p>Dear Sir,<br />Please go through below EOD update</p></div>';
+		$message .= '<div>'.$taskTable.'</div>';
+		$message .= '<div><p>Best Regards,<br />'.$current_user->first_name.' '.$current_user->last_name.'</p></div>';
+		return $message;
+	}
+}

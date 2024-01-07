@@ -1,0 +1,42 @@
+Traced on 2024-01-02 08:56:39
+FileAccessForInclusion - 
+C:\xampp_7_4\htdocs\vtiger8\include\utils\CommonUtils.php::checkFileAccessForInclusion::388<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::checkFileAccessForInclusion::65<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::includeOnce::191<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\main\WebUI.php::vimport::15<br>
+C:\xampp_7_4\htdocs\vtiger8\index.php::include_once::23<br>
+Traced on 2024-01-02 08:57:26
+FileAccessForInclusion - 
+C:\xampp_7_4\htdocs\vtiger8\include\utils\CommonUtils.php::checkFileAccessForInclusion::388<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::checkFileAccessForInclusion::65<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::includeOnce::191<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\main\WebUI.php::vimport::15<br>
+C:\xampp_7_4\htdocs\vtiger8\index.php::include_once::23<br>
+Traced on 2024-01-02 08:57:29
+FileAccessForInclusion - 
+C:\xampp_7_4\htdocs\vtiger8\include\utils\CommonUtils.php::checkFileAccessForInclusion::388<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::checkFileAccessForInclusion::65<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::includeOnce::191<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\main\WebUI.php::vimport::15<br>
+C:\xampp_7_4\htdocs\vtiger8\index.php::include_once::23<br>
+Traced on 2024-01-02 08:57:52
+FileAccessForInclusion - 
+C:\xampp_7_4\htdocs\vtiger8\include\utils\CommonUtils.php::checkFileAccessForInclusion::388<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::checkFileAccessForInclusion::65<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::includeOnce::191<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\main\WebUI.php::vimport::15<br>
+C:\xampp_7_4\htdocs\vtiger8\index.php::include_once::23<br>
+Traced on 2024-01-02 08:57:54
+FileAccessForInclusion - 
+C:\xampp_7_4\htdocs\vtiger8\include\utils\CommonUtils.php::checkFileAccessForInclusion::388<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::checkFileAccessForInclusion::65<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::includeOnce::191<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\main\WebUI.php::vimport::15<br>
+C:\xampp_7_4\htdocs\vtiger8\index.php::include_once::23<br>
+Traced on 2024-01-02 08:58:03
+FileAccessForInclusion - 
+C:\xampp_7_4\htdocs\vtiger8\include\utils\CommonUtils.php::checkFileAccessForInclusion::388<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::checkFileAccessForInclusion::65<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\Loader.php::includeOnce::191<br>
+C:\xampp_7_4\htdocs\vtiger8\includes\main\WebUI.php::vimport::15<br>
+C:\xampp_7_4\htdocs\vtiger8\index.php::include_once::23<br>
